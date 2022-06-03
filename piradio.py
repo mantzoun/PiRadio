@@ -22,6 +22,7 @@ class Main:
     b1_push_time = 0
     b2_push_time = 0
 
+    # [Stream URL or playlist loation, Stream title to display, Media type]
     streams = [
                ['/home/pi/music/playlist.m3u', "list-1",   "list"],
                ['http:/url.of.radiostream',    "Stream-1", "stream"],
@@ -31,6 +32,8 @@ class Main:
         init_done = False
 
         while not init_done:
+            # When running immediately after boot (e.g. via cron), GPIO initialization
+            # will fail, so this may take a couple of tries
             try:
                 GPIO.setmode(GPIO.BCM)
                 GPIO.setup(4, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -48,6 +51,9 @@ class Main:
                 print("*** GPIO init failed, retrying...")
                 time.sleep(2)
 
+    # Button 1
+    # Volume down on sort press, previous track on long press
+    # TODO: use to set alarm clock
     def button1_cb(self, channel):
         if self.player.on():
             time.sleep(.01)
@@ -59,6 +65,9 @@ class Main:
             else:
                 self.b1_push = time.time()
 
+    # Button 2
+    # Volume up on sort press, next track on long press
+    # TODO: use to set alarm clock
     def button2_cb(self, channel):
         if self.player.on():
             time.sleep(.01)
@@ -70,6 +79,9 @@ class Main:
             else:
                 self.b2_push = time.time()
 
+    # Button 3
+    # Play next configured source
+    # TODO: Switch to alarm configuration
     def button3_cb(self, channel):
         if self.player.on():
             self.last_stream = (self.last_stream + 1) % len(self.streams)
@@ -77,6 +89,8 @@ class Main:
             self.player.stop()
             self.player.start(self.streams[self.last_stream][0], self.streams[self.last_stream][1], self.streams[self.last_stream][2])
 
+    # Button 4
+    # Start / Stop media playback
     def button4_cb(self,channel):
         if self.player.on():
             self.player.stop()
@@ -85,6 +99,7 @@ class Main:
             self.player.start(self.streams[self.last_stream][0], self.streams[self.last_stream][1], self.streams[self.last_stream][2])
             self.lcd_mgr.set_mode("player")
 
+    # Try to exit gracefully when signalled
     def handler(self, signum, frame):
         print("*** Exiting")
         print("*** GPIO cleanup")

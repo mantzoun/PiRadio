@@ -6,20 +6,20 @@ import time
 from threading import Thread
 
 class lcd_manager:
-    mylcd = None
-    lcd_t = None
-    volume = ""
-    title = ""
-    stream_title = ""
-    mytime_mgr = None
-    mode = "clock"
-    v_cnt = -1
+    mylcd = None            # LCD driver
+    lcd_t = None            # LCD controller thread
+    volume = ""             # Volume level (string), set externally via set_info() interface
+    title = ""              # Current song title, set externally via set_info() interface
+    stream_title = ""       # Current playing media source title, set externally via set_info() interface
+    mytime_mgr = None       # Object that provides datetime preformated strings
+    mode = "clock"          # Current display mode
 
     #Loop variables
-    my_title = ""
-    my_stream_title = ""
-    my_volume = ""
+    my_title = ""           # Song title being displayed in LCD
+    my_stream_title = ""    # Media source title being displayed in LCD
+    my_volume = ""          # Volume level being displayed in LCD
 
+    # Interface for player to provide information
     def info_set(self, info, value):
         if info == "title":
             self.title = value
@@ -46,6 +46,10 @@ class lcd_manager:
             self.my_stream_title = ""
             self.mytime_mgr.reset()
 
+    # Thread to constantly update the LCD
+    # The LCD will update every second in clock mode and
+    # twice a second in playback mode. Lots of room for
+    # improvement here
     def loop(self):
         v_cnt = -1
         t_len = 0
@@ -64,6 +68,8 @@ class lcd_manager:
                     t_len = len(self.my_title)
                     new_title = True
 
+                # When a new volume level is set, the volume will be displayed
+                # in the lower line of the LCD for 2 loops (tracked via v_cnt)
                 if self.my_volume != self.volume:
                     self.my_volume = self.volume
                     v_cnt = 2
@@ -75,10 +81,13 @@ class lcd_manager:
                     self.mylcd.lcd_display_string(self.my_stream_title.center(16), 2, 0)
                     v_cnt -= 1
                 else:
+                    # If we are not displaying the volume level, check if we need to
+                    # update the media title
                     if self.stream_title != self.my_stream_title:
                         self.my_stream_title = self.stream_title
                         self.mylcd.lcd_display_string(self.my_stream_title.center(16), 2, 0)
 
+                # Display and/or rotate the song title on the first LCD line (if necessary)
                 if t_len <= 16:
                     if new_title:
                         disp_title = self.my_title.center(16)
@@ -90,6 +99,10 @@ class lcd_manager:
 
                 time.sleep(0.5)
             elif self.mode == "clock":
+                # Get new date/time from the datetime provider
+                # Date will of course change every 24H, but the time
+                # changes every second due to the ":" character blinking
+                # TODO: some optimization needed here
                 dt = self.mytime_mgr.get_date()
                 tm = self.mytime_mgr.get_time()
 
