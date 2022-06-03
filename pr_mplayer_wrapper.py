@@ -12,14 +12,21 @@ class mplayer_wrapper:
     debug = False
     out_t = None
 
+    # Set the interface to the LCD controller, so as to pass
+    # media information
     def __init__(self, info_set):
         self.info_set = info_set
 
+    # Boolean that indicates if the player is running
     def on(self):
         if self.player_proc == None:
             return False
         return True
 
+    # Parse the player output for relevant information. Of course needs
+    # to be highly specific. Current implemantion, which uses mplayer
+    # for playback, can capture ICY StreamTitle tag for currently playing
+    # song in radio stream, or can parse song filename based on path
     def parse_output(self):
         while self.player_proc != None:
             line = self.player_proc.stdout.readline().decode('utf-8')
@@ -37,10 +44,12 @@ class mplayer_wrapper:
                 print(splt[1])
                 self.info_set("title", (self.to_ascii(splt[1])))
 
+    # Start the output parser
     def start_output_thread(self):
         self.out_t = Thread(target = self.parse_output, args = ())
         self.out_t.start()
 
+    # My LCD will not display greek characters, so do a rough transformation to latin"
     def to_ascii(self, str_in):
         char_map = str_in.maketrans("ΆΑάαΒβΓγΔδΈΕέεΖζΉΗήηΘθΊΙίιΚκΛλΜμΝνΞξΌΟόοΠπΡρΣσςΤτΎΥύυΦφΧχΨψΏΩώω",
                                     "AAaaBbGgDdEEeeZzHHhh88IIiiKkLlMmNn33OOooPpRrSssTtYYuuFfXxCcWWww");
@@ -48,7 +57,8 @@ class mplayer_wrapper:
         str_out = str_in.translate(char_map)
         return str_out
 
-
+    # Start mplayer in a different thread, and use the in/out pipes for
+    # playback control and information
     def start(self, stream_url, title, type):
 
         if self.debug == True:
@@ -71,6 +81,8 @@ class mplayer_wrapper:
         self.info_set("stream_title", title)
         self.start_output_thread()
 
+    # Kill the mplayer process
+    # TODO: should probably add some mplayer shortcut to exit gracefully
     def stop(self):
         os.killpg(os.getpgid(self.player_proc.pid), signal.SIGTERM)
         self.player_proc = None
