@@ -13,6 +13,7 @@ from threading import Thread
 from pr_time_manager import time_manager
 from pr_lcd_manager import lcd_manager
 from pr_mplayer_wrapper import mplayer_wrapper
+from pr_sources import sources
 
 class Main:
     last_stream = 0
@@ -21,12 +22,6 @@ class Main:
 
     b1_push_time = 0
     b2_push_time = 0
-
-    # [Stream URL or playlist loation, Stream title to display, Media type]
-    streams = [
-               ['/home/pi/music/playlist.m3u', "list-1",   "list"],
-               ['http:/url.of.radiostream',    "Stream-1", "stream"],
-               ]
 
     def gpio_init(self):
         init_done = False
@@ -84,10 +79,10 @@ class Main:
     # TODO: Switch to alarm configuration
     def button3_cb(self, channel):
         if self.player.on():
-            self.last_stream = (self.last_stream + 1) % len(self.streams)
+            self.last_stream = (self.last_stream + 1) % len(sources)
 
             self.player.stop()
-            self.player.start(self.streams[self.last_stream][0], self.streams[self.last_stream][1], self.streams[self.last_stream][2])
+            self.player.start(sources[self.last_stream][0], sources[self.last_stream][1], sources[self.last_stream][2])
 
     # Button 4
     # Start / Stop media playback
@@ -96,7 +91,7 @@ class Main:
             self.player.stop()
             self.lcd_mgr.set_mode("clock")
         else:
-            self.player.start(self.streams[self.last_stream][0], self.streams[self.last_stream][1], self.streams[self.last_stream][2])
+            self.player.start(sources[self.last_stream][0], sources[self.last_stream][1], sources[self.last_stream][2])
             self.lcd_mgr.set_mode("player")
 
     # Try to exit gracefully when signalled
