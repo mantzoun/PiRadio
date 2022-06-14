@@ -37,6 +37,9 @@ class lcd_manager:
         self.lcd_t.start()
 
     def set_mode(self, mode):
+        if self.mode == mode:
+            return
+
         self.mode = mode
 
         if self.mode == "clock":
@@ -45,6 +48,12 @@ class lcd_manager:
             self.my_title = ""
             self.my_stream_title = ""
             self.mytime_mgr.reset()
+
+        if self.mode == "alarm":
+            self.title = "ALARM"
+            self.stream_title = "00:00"
+            self.my_title = ""
+            self.my_stream_title = ""
 
     # Thread to constantly update the LCD
     # The LCD will update every second in clock mode and
@@ -110,5 +119,8 @@ class lcd_manager:
                     self.mylcd.lcd_display_string(dt, 1, 0)
                 if tm != None:
                     self.mylcd.lcd_display_string(tm, 2, 0)
+
+            elif self.mode == "alarm":
+                pass
 
                 time.sleep(1)
