@@ -11,6 +11,7 @@ import RPi.GPIO as GPIO
 from threading import Thread
 
 from pr_time_manager import time_manager
+from pr_alarm_manager import alarm_manager
 from pr_lcd_manager import lcd_manager
 from pr_mplayer_wrapper import mplayer_wrapper
 from pr_sources import sources
@@ -19,6 +20,7 @@ class Main:
     last_stream = 0
     player = None
     lcd_mgr = None
+    alarm_mgr = None
 
     b1_push_time = 0
     b2_push_time = 0
@@ -59,6 +61,9 @@ class Main:
                     self.player.vol_down()
             else:
                 self.b1_push = time.time()
+        else:
+            #if in alarm mode, button1 handler
+            self.alarm_mgr.button1()
 
     # Button 2
     # Volume up on sort press, next track on long press
@@ -73,6 +78,9 @@ class Main:
                     self.player.vol_up()
             else:
                 self.b2_push = time.time()
+        else:
+            #if in alarm mode, button2 handler
+            self.alarm_mgr.button2()
 
     # Button 3
     # Play next configured source
@@ -83,6 +91,13 @@ class Main:
 
             self.player.stop()
             self.player.start(sources[self.last_stream][0], sources[self.last_stream][1], sources[self.last_stream][2])
+        else:
+            # go to alarm mode
+            # show alarm info, and toggle alarm editable
+            self.lcd_mgr.set_mode("alarm")
+            ret = self.alarm_mgr.show_alarm_info()
+            if ret == -1:
+                self.lcd_mgr.set_mode("clock")
 
     # Button 4
     # Start / Stop media playback
@@ -91,8 +106,12 @@ class Main:
             self.player.stop()
             self.lcd_mgr.set_mode("clock")
         else:
-            self.player.start(sources[self.last_stream][0], sources[self.last_stream][1], sources[self.last_stream][2])
-            self.lcd_mgr.set_mode("player")
+            if self.mode == "clock": #TODO ADD THIS!!!
+                self.player.start(sources[self.last_stream][0], sources[self.last_stream][1], sources[self.last_stream][2])
+                self.lcd_mgr.set_mode("player")
+            else:
+                #if in alarm mode, button4 handler
+                self.alarm_mgr.button4()
 
     # Try to exit gracefully when signalled
     def handler(self, signum, frame):
@@ -105,6 +124,9 @@ class Main:
             self.player.stop()
 
         exit(0)
+
+    def alarm_cb():
+        pass
 
     def run(self):
         signal.signal(signal.SIGINT, self.handler)
@@ -121,6 +143,7 @@ class Main:
         self.lcd_mgr.start_lcd_controller()
 
         self.player = mplayer_wrapper(self.lcd_mgr.info_set)
+        self.alarm_mgr = alarm_manager(self.lcd_mgr.info_set, self.alarm_cb)
 
         while True:
             time.sleep(100000)
