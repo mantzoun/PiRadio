@@ -9,7 +9,7 @@ class lcd_manager:
     mylcd = None            # LCD driver
     lcd_t = None            # LCD controller thread
     volume = ""             # Volume level (string), set externally via set_info() interface
-    title = ""              # Current song title, set externally via set_info() interface
+    title = ""              # Current song title, set externally via info_set() interface
     stream_title = ""       # Current playing media source title, set externally via set_info() interface
     mytime_mgr = None       # Object that provides datetime preformated strings
     mode = "clock"          # Current display mode
@@ -18,6 +18,8 @@ class lcd_manager:
     my_title = ""           # Song title being displayed in LCD
     my_stream_title = ""    # Media source title being displayed in LCD
     my_volume = ""          # Volume level being displayed in LCD
+
+    keep_alive = True
 
     # Interface for player to provide information
     def info_set(self, info, value):
@@ -31,6 +33,9 @@ class lcd_manager:
     def __init__(self, time_mgr):
         self.mylcd = lcd.lcd()
         self.mytime_mgr = time_mgr
+
+    def terminate(self):
+        self.keep_alive = False
 
     def start_lcd_controller(self):
         self.lcd_t = Thread(target = self.loop, args =())
@@ -69,7 +74,7 @@ class lcd_manager:
         tm = ""
         dt = ""
 
-        while True:
+        while self.keep_alive:
             if self.mode == "player":
                 if self.my_title != self.title:
                     self.my_title = self.title
@@ -120,7 +125,9 @@ class lcd_manager:
                 if tm != None:
                     self.mylcd.lcd_display_string(tm, 2, 0)
 
-            elif self.mode == "alarm":
-                pass
-
                 time.sleep(1)
+            elif self.mode == "alarm":
+                self.mylcd.lcd_display_string(self.title.center(16), 1, 0)
+                self.mylcd.lcd_display_string(self.stream_title.center(16), 2, 0)
+
+                time.sleep(0.5)
