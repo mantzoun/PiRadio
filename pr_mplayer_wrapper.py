@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import subprocess
 import os
 import re
@@ -38,11 +36,11 @@ class mplayer_wrapper:
             elif 'StreamTitle' in line:
                 splt = re.split(r'Title=\'|\';\n', line)
                 print(splt[1])
-                self.info_set("title", (self.to_ascii(splt[1])))
+                self.info_set(self.to_ascii(splt[1]), None)
             elif 'Playing /home/pi' in line:
-                splt = re.split(r'Playing /home/pi/music/|.mp3', line)
+                splt = re.split(r'Playing /home/pi/sxolio/|.mp3', line)
                 print(splt[1])
-                self.info_set("title", (self.to_ascii(splt[1])))
+                self.info_set(self.to_ascii(splt[1]), None)
 
     # Start the output parser
     def start_output_thread(self):
@@ -78,7 +76,7 @@ class mplayer_wrapper:
                                         stdout=subprocess.PIPE,
                                         stderr=err_out)
 
-        self.info_set("stream_title", title)
+        self.info_set(None, title)
         self.start_output_thread()
 
     # Kill the mplayer process
@@ -86,8 +84,7 @@ class mplayer_wrapper:
     def stop(self):
         os.killpg(os.getpgid(self.player_proc.pid), signal.SIGTERM)
         self.player_proc = None
-        self.info_set("stream_title", "")
-        self.info_set("title", "")
+        self.info_set("", "")
 
     def prev_track(self):
         self.player_proc.stdin.write(b'<')
